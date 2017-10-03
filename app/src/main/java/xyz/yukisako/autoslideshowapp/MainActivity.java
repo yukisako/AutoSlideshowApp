@@ -28,8 +28,8 @@ public class MainActivity extends AppCompatActivity {
     Timer mSlideCounter;
     TextView mTimerText;
     Button mStartButton;
-    Button mPauseButton;
-    Button mResetbutton;
+    Button mNextButton;
+    Button mBackbutton;
     ImageView mImageView;
 
     ArrayList<Uri> imageUriArray = new ArrayList<>();
@@ -48,8 +48,8 @@ public class MainActivity extends AppCompatActivity {
 
         mTimerText = (TextView) findViewById(R.id.timer);
         mStartButton = (Button) findViewById(R.id.start_button);
-        mPauseButton = (Button) findViewById(R.id.pause_button);
-        mResetbutton = (Button) findViewById(R.id.reset_button);
+        mNextButton = (Button) findViewById(R.id.next_button);
+        mBackbutton = (Button) findViewById(R.id.back_button);
         mImageView = (ImageView) findViewById(R.id.imageView);
         //起動した時にパーミッションの許可状態を確認
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -69,47 +69,65 @@ public class MainActivity extends AppCompatActivity {
         mStartButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                if(mSlideCounter == null){
-                    //タイマーの作成
-                    mSlideCounter = new Timer();
-                    mSlideCounter.schedule(new TimerTask(){
-                        @Override
-                        public void run(){
-                            mCountNum += 1;
+                //画像の取得に成功しているかつ画像が1枚以上あったらタイマーを作動
+                if(imageUriArray.size() != 0){
+                    if(mSlideCounter == null) {
+                        //タイマーの作成
+                        mSlideCounter = new Timer();
+                        //カウンターを作成したら，ボタンを停止に変える
+                        mStartButton.setText("停止");
 
-                            mHandler.post(new Runnable(){
-                                @Override
-                                public void run(){
-                                    int num = mCountNum%imageUriArray.size();
-                                    mImageView.setImageURI(imageUriArray.get(num));
-                                    mTimerText.setText(String.format("%d枚目を表示中",num+1));
-                                }
-                            });
-                        }
-                    },1000,1000); //最初に始動させるまで100ms，ループ感覚を100m
+                        mSlideCounter.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                mCountNum += 1;
+
+                                mHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        int num = mCountNum % imageUriArray.size();
+                                        mImageView.setImageURI(imageUriArray.get(num));
+                                        mTimerText.setText(String.format("%d枚目を表示中", num + 1));
+                                    }
+                                });
+                            }
+                        }, 2000, 2000);
+                    } else {
+                        //カウンターを止める
+                        mSlideCounter.cancel();
+                        mSlideCounter = null;
+                        mStartButton.setText("再生");
+                    }
                 }
             }
         });
 
-        mPauseButton.setOnClickListener(new View.OnClickListener(){
+        mNextButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                if(mSlideCounter != null){
-                    mSlideCounter.cancel();
-                    mSlideCounter = null;
+                //画像の取得に成功しているかつ画像が1枚以上あったら次へ
+                if(imageUriArray.size() != 0){
+                    mCountNum += 1;
+                    int num = mCountNum % imageUriArray.size();
+                    mImageView.setImageURI(imageUriArray.get(num));
+                    mTimerText.setText(String.format("%d枚目を表示中", num + 1));
+                } else {
+                    mTimerText.setText(String.format("写真へのアクセスを許可した後に，画像を1枚以上追加してください"));
                 }
             }
         });
 
-        mResetbutton.setOnClickListener(new View.OnClickListener(){
+        mBackbutton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                mCountNum = 0;
-                mImageView.setImageURI(imageUriArray.get(0));
-                mTimerText.setText(String.format("%d枚目を表示中",mCountNum+1));
-                if(mSlideCounter != null){
-                    mSlideCounter.cancel();
-                    mSlideCounter = null;
+                //画像の取得に成功しているかつ画像が1枚以上あったら戻る
+                if(imageUriArray.size() != 0){
+                    mCountNum -= 1;
+                    int num = mCountNum % imageUriArray.size();
+                    mImageView.setImageURI(imageUriArray.get(num));
+                    mTimerText.setText(String.format("%d枚目を表示中", num + 1));
+                } else {
+                    mTimerText.setText(String.format("写真へのアクセスを許可した後に，画像を1枚以上追加してください"));
                 }
             }
         });
@@ -124,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             default:
+                mTimerText.setText(String.format("写真へのアクセスを許可してください"));
                 break;
         }
     }
